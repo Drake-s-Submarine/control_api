@@ -6,3 +6,4 @@ set -e
 cross build --target arm-unknown-linux-gnueabi
 
 scp target/arm-unknown-linux-gnueabi/debug/control_api drake@192.168.50.105:~
+scp -r static/ drake@192.168.50.105:~

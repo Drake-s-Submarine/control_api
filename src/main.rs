@@ -15,6 +15,7 @@ use common::commands::{
 use serde::Deserialize;
 use std::os::unix::net::UnixStream;
 use std::io::Write;
+use tower_http::services::ServeDir;
 
 #[derive(Debug, Deserialize)]
 struct BallastRequest {
@@ -54,11 +55,14 @@ fn get_unix_stream() -> UnixStream {
 #[tokio::main]
 async fn main() {
 
-    let app = Router::new()
+    let api_router = Router::new()
         .route("/test", get(test))
         .route("/ballast", post(set_ballast_state))
         .route("/propulsion", post(set_propulsion_state))
         .route("/light", post(set_light_state));
+    let app = Router::new()
+        .nest("/api", api_router)
+        .nest_service("/", ServeDir::new("static"));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
 
@@ -85,6 +89,8 @@ async fn set_ballast_state(Json(req): Json<BallastRequest>) -> impl IntoResponse
 
 async fn set_propulsion_state(Json(req): Json<PropRequest>) -> impl IntoResponse {
     let command = PropulsionCommand::SetThrust(Vector2d{x: req.x, y: req.y});
+
+    println!("{:?}", command);
 
     let mut stream = get_unix_stream();
 
